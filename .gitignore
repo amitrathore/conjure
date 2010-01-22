@@ -1,0 +1,10 @@
+*~
+*#*
+.classpath
+.project
+config/config.clj
+scripts/furtive
+logs/*
+logs
+.DS_Store
+*_flymake.js

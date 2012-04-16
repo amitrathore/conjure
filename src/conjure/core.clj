@@ -1,4 +1,4 @@
-(ns org.rathore.amit.conjure.core
+(ns conjure.core
   (:use clojure.test))
 
 (def call-times (atom {}))
@@ -26,12 +26,12 @@
 
 (defmacro mocking [fn-names & body]
   (let [mocks (map #(list 'mock-fn %) fn-names)]
-    `(binding [~@(interleave fn-names mocks)]
+    `(with-redefs [~@(interleave fn-names mocks)]
        ~@body)))
 
 (defmacro stubbing [stub-forms & body]
   (let [stub-pairs (partition 2 stub-forms)
         fn-names (map first stub-pairs)
         stubs (map #(list 'stub-fn (first %) (last %)) stub-pairs)]
-    `(binding [~@(interleave fn-names stubs)]
+    `(with-redefs [~@(interleave fn-names stubs)]
        ~@body)))

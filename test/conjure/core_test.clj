@@ -1,6 +1,6 @@
-(ns conjure-spec
-  (:use [clojure.test :only [run-tests deftest is are]])
-  (:use org.rathore.amit.conjure.core))
+(ns conjure.core-test
+  (:use [clojure.test :only [run-tests deftest is are]]
+        conjure.core))
 
 (defn xx [a b]
   10)
@@ -13,7 +13,8 @@
   (yy "blah"))
 
 (defn another-fn-under-test []
-  (+ (xx nil nil) (yy nil)))
+  (+ (xx nil nil)
+     (yy nil)))
 
 (deftest test-basic-mocking
   (mocking [xx yy]

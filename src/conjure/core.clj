@@ -7,7 +7,9 @@
   (swap! call-times assoc function-name [])
   (fn [& args]
     (swap! call-times update-in [function-name] conj args)
-    return-value))
+    (if (fn? return-value)
+      (return-value)
+      return-value)))
 
 (defn mock-fn [function-name]
   (stub-fn function-name nil))

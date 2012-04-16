@@ -28,3 +28,10 @@
   (is (= (another-fn-under-test) 30))
   (stubbing [xx 1 yy 2]
     (is (= (another-fn-under-test) 3))))
+
+(deftest test-fn-based-stubs
+  (is (= (another-fn-under-test) 30))
+    (stubbing [xx 1 yy (fn [] (+ 2 3))]
+      (is (= (another-fn-under-test) 6)))
+    (stubbing [xx 1 yy (fn [] (+ 2 (xx :a :b)))]
+      (is (= (another-fn-under-test) 4))))

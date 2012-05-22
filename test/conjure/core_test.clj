@@ -36,7 +36,16 @@
   (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b )))]
     (is (= (another-fn-under-test) 4))))
 
+(defn f []
+  "called f")
+
 (deftest test-passes-args-through-to-fake-fn
-  (defn f [])
   (stubbing [f (fn [& msgs] msgs)]
     (is (= ["a" "b" "c"] (f "a" "b" "c")))))
+
+(deftest test-can-stub-multimethods
+  (defmulti mm :shape)
+  (defmethod mm :triangle [x]
+    "called triangle multimethod")
+  (stubbing [f mm]
+    (is (= "called triangle multimethod" (f {:shape :triangle})))))

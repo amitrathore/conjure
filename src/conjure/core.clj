@@ -7,7 +7,8 @@
   (swap! call-times assoc function-name [])
   (fn [& args]
     (swap! call-times update-in [function-name] conj args)
-    (if (fn? return-value)
+    (if (or (fn? return-value)
+            (instance? clojure.lang.MultiFn return-value))
       (apply return-value args)
       return-value)))
 

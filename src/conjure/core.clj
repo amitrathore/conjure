@@ -8,7 +8,7 @@
   (fn [& args]
     (swap! call-times update-in [function-name] conj args)
     (if (fn? return-value)
-      (return-value)
+      (apply return-value args)
       return-value)))
 
 (defn mock-fn [function-name]

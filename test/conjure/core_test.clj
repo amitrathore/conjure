@@ -12,7 +12,7 @@
   (xx 1 2)
   (yy "blah"))
 
-(defn another-fn-under-test []
+(defn another-fn-under-test [& _args]
   (+ (xx nil nil)
      (yy nil)))
 
@@ -31,7 +31,21 @@
 
 (deftest test-fn-based-stubs
   (is (= (another-fn-under-test) 30))
-    (stubbing [xx 1 yy (fn [] (+ 2 3))]
-      (is (= (another-fn-under-test) 6)))
-    (stubbing [xx 1 yy (fn [] (+ 2 (xx :a :b)))]
-      (is (= (another-fn-under-test) 4))))
+  (stubbing [xx 1 yy (fn [_] (+ 2 3))]
+    (is (= (another-fn-under-test) 6)))
+  (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b )))]
+    (is (= (another-fn-under-test) 4))))
+
+(defn f []
+  "called f")
+
+(deftest test-passes-args-through-to-fake-fn
+  (stubbing [f (fn [& msgs] msgs)]
+    (is (= ["a" "b" "c"] (f "a" "b" "c")))))
+
+(deftest test-can-stub-multimethods
+  (defmulti mm :shape)
+  (defmethod mm :triangle [x]
+    "called triangle multimethod")
+  (stubbing [f mm]
+    (is (= "called triangle multimethod" (f {:shape :triangle})))))

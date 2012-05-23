@@ -29,12 +29,12 @@
 
 (defmacro mocking [fn-names & body]
   (let [mocks (map #(list 'conjure.core/mock-fn %) fn-names)]
-    `(with-redefs [~@(interleave fn-names mocks)]
+    `(binding [~@(interleave fn-names mocks)]
        ~@body)))
 
 (defmacro stubbing [stub-forms & body]
   (let [stub-pairs (partition 2 stub-forms)
         fn-names (map first stub-pairs)
         stubs (map #(list 'conjure.core/stub-fn (first %) (last %)) stub-pairs)]
-    `(with-redefs [~@(interleave fn-names stubs)]
+    `(binding [~@(interleave fn-names stubs)]
        ~@body)))

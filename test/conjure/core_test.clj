@@ -24,6 +24,16 @@
   (verify-first-call-args-for xx 1 2)
   (verify-first-call-args-for yy "blah"))
 
+(clear-calls)
+
+(deftest test-mocking-can-verify-within-mocking-scope
+  (mocking [xx yy]
+    (fn-under-test)
+    (verify-call-times-for xx 1)
+    (verify-call-times-for yy 1)
+    (verify-first-call-args-for xx 1 2)
+    (verify-first-call-args-for yy "blah")))
+
 (deftest test-basic-stubbing
   (is (= (another-fn-under-test) 30))
   (stubbing [xx 1 yy 2]

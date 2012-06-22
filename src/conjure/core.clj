@@ -5,8 +5,9 @@
 
 (defn stub-fn [function-name return-value]
   (swap! call-times assoc function-name [])
-  (fn [& args]
+  (fn this [& args]
     (swap! call-times update-in [function-name] conj args)
+    (swap! call-times update-in [this] conj args)
     (if (or (fn? return-value)
             (instance? clojure.lang.MultiFn return-value))
       (apply return-value args)

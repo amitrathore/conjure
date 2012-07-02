@@ -22,6 +22,10 @@
 (defn verify-first-call-args-for [fn-name & args]
   (is (= args (first (@call-times fn-name)))))
 
+(defn verify-called-once-with-args [fn-name & args]
+  (verify-call-times-for fn-name 1)
+  (apply verify-first-call-args-for fn-name args))
+
 (defn verify-nth-call-args-for [n fn-name & args]
   (is (= args (nth (@call-times fn-name) (dec n)))))
 

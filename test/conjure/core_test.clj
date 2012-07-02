@@ -22,6 +22,19 @@
   (verify-call-times-for xx 1)
   (verify-call-times-for yy 1)
   (verify-first-call-args-for xx 1 2)
+  (verify-first-call-args-for yy "blah")
+
+  ;; common case: combines fact that it had one call and its args were correct
+  (verify-called-once-with-args xx 1 2)
+  (verify-called-once-with-args yy "blah"))
+
+
+(deftest test-verifying-only-one-call-and-its-args
+  (mocking [xx yy]
+    (fn-under-test))
+  (verify-call-times-for xx 1)
+  (verify-call-times-for yy 1)
+  (verify-first-call-args-for xx 1 2)
   (verify-first-call-args-for yy "blah"))
 
 (clear-calls)

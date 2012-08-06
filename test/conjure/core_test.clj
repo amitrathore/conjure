@@ -59,6 +59,14 @@
   (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b )))]
     (is (= (another-fn-under-test) 4))))
 
+(defn three-arg-fn [a b c]
+  "Bonjour!")
+
+(deftest test-verify-first-call-args-for-indices
+  (mocking [three-arg-fn]
+           (three-arg-fn "one" "two" "three"))
+  (verify-first-call-args-for-indices three-arg-fn [0 2] "one" "three"))
+
 (defn f []
   "called f")
 

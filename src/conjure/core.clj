@@ -29,6 +29,14 @@
 (defn verify-nth-call-args-for [n fn-name & args]
   (is (= args (nth (@call-times fn-name) (dec n)))))
 
+(defn verify-first-call-args-for-indices [fn-name indices & args]
+  (let [first-call-args (first (@call-times fn-name))
+        indices-in-range? (< (apply max indices) (count first-call-args))]
+    (if indices-in-range?
+      (is (= args
+             (map #(nth first-call-args %) indices)))
+      (is (= :fail (format "indices %s are out of range for the args, %s" indices args))))))
+
 (defn clear-calls []
   (reset! call-times {}))
 

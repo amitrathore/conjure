@@ -41,21 +41,21 @@
   (reset! call-times {}))
 
 (defmacro mocking [fn-names & body]
-  (let [binding-or-stubbing (if (= 2 (:minor *clojure-version*))
+  (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
                               'binding
                               'with-redefs)
         mocks (for [name fn-names]
                 `(conjure.core/mock-fn ~name))]
-    `(~binding-or-stubbing [~@(interleave fn-names mocks)]
+    `(~binding-or-with-redefs [~@(interleave fn-names mocks)]
        ~@body)))
 
 (defmacro stubbing [stub-forms & body]
-  (let [binding-or-stubbing (if (= 2 (:minor *clojure-version*))
+  (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
                               'binding
                               'with-redefs)
         stub-pairs (partition 2 stub-forms)
         fn-names (map first stub-pairs)
         stubs (for [[fn-name return-value] stub-pairs]
                `(conjure.core/stub-fn ~fn-name ~return-value))]
-    `(~binding-or-stubbing [~@(interleave fn-names stubs)]
+    `(~binding-or-with-redefs [~@(interleave fn-names stubs)]
        ~@body)))

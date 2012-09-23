@@ -3,15 +3,30 @@
 
 (def call-times (atom {}))
 
+(defn is-return-value-fn? [return-value]
+  (or (fn? return-value)
+      (instance? clojure.lang.MultiFn return-value)))
+
+(defn apply-return-value-for-fn [return-value args]
+  (if (is-return-value-fn? return-value)
+    (apply return-value args)
+    return-value))
+
 (defn stub-fn [function-name return-value]
   (swap! call-times assoc function-name [])
   (fn this [& args]
     (swap! call-times update-in [function-name] conj args)
     (swap! call-times update-in [this] conj args)
-    (if (or (fn? return-value)
-            (instance? clojure.lang.MultiFn return-value))
-      (apply return-value args)
-      return-value)))
+    (apply-return-value-for-fn return-value args)))
+
+(defn stub-fn-with-return-vals [function-name return-values]
+  (swap! call-times assoc function-name [])
+  (fn this [& args]
+    (swap! call-times update-in [function-name] conj args)
+    (let [call-times-for-fn (count (@call-times function-name))]
+      (if (< call-times-for-fn (count return-values))
+        (apply-return-value-for-fn (nth return-values (dec call-times-for-fn)) args)
+        (apply-return-value-for-fn (last return-values) args)))))
 
 (defn mock-fn [function-name]
   (stub-fn function-name nil))
@@ -49,13 +64,22 @@
     `(~binding-or-with-redefs [~@(interleave fn-names mocks)]
        ~@body)))
 
-(defmacro stubbing [stub-forms & body]
-  (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
+(def binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
                               'binding
-                              'with-redefs)
-        stub-pairs (partition 2 stub-forms)
+                              'with-redefs))
+
+(defmacro stubbing [stub-forms & body]
+  (let [stub-pairs (partition 2 stub-forms)
         fn-names (map first stub-pairs)
         stubs (for [[fn-name return-value] stub-pairs]
                `(conjure.core/stub-fn ~fn-name ~return-value))]
+    `(~binding-or-with-redefs [~@(interleave fn-names stubs)]
+       ~@body)))
+
+(defmacro stubbing-with-return-vals [stub-forms & body]
+  (let [stub-pairs (partition 2 stub-forms)
+        fn-names (map first stub-pairs)
+        stubs (for [[fn-name return-value] stub-pairs]
+               `(conjure.core/stub-fn-with-return-vals ~fn-name ~return-value))]
     `(~binding-or-with-redefs [~@(interleave fn-names stubs)]
        ~@body)))

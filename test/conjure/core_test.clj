@@ -79,4 +79,14 @@
   (defmethod mm :triangle [x]
     "called triangle multimethod")
   (stubbing [f mm]
-    (is (= "called triangle multimethod" (f {:shape :triangle})))))
+            (is (= "called triangle multimethod" (f {:shape :triangle})))))
+
+(defn a [] "a")
+
+(deftest test-stubbing-with-return-vals
+  (stubbing-with-return-vals [a ["b" "c" "d"]]
+    (is (= "b" (a)))
+    (is (= "c" (a)))
+    (is (= "d" (a)))
+    (is (= "d" (a)))
+    (is (= "d" (a)))))

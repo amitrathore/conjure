@@ -83,8 +83,8 @@
 
 (defn a [] "a")
 
-(deftest test-stubbing-with-return-vals
-  (stubbing-with-return-vals [a ["b" "c" "d"]]
+(deftest test-stub-fn-with-return-vals
+  (stubbing [a (stub-fn-with-return-vals ["b" "c" "d"])]
     (is (= "b" (a)))
     (is (= "c" (a)))
     (is (= "d" (a)))

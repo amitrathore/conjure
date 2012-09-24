@@ -85,8 +85,11 @@
 
 (deftest test-stub-fn-with-return-vals
   (stubbing [a (stub-fn-with-return-vals ["b" "c" "d"])]
-    (is (= "b" (a)))
-    (is (= "c" (a)))
-    (is (= "d" (a)))
-    (is (= "d" (a)))
-    (is (= "d" (a)))))
+            (is (= "b" (a)))
+            (is (= "c" (a)))
+            (is (= "d" (a)))
+            (is (= "d" (a)))
+            (is (= "d" (a))))
+
+  (stubbing [a (stub-fn-with-return-vals [])]
+            (is (= nil (a)))))

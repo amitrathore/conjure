@@ -1,6 +1,6 @@
 (def common-deps '[])
 
-(defproject org.clojars.runa/conjure "1.0.2"
+(defproject org.clojars.runa/conjure "1.0.3"
   :description "Conjure mocking and stubbing"
   :dependencies ~(cons '[org.clojure/clojure "1.3.0"]
                    common-deps)

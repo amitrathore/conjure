@@ -30,28 +30,31 @@
 (defn mock-fn [function-name]
   (stub-fn function-name nil))
 
-(defn verify-call-times-for [fn-name number]
-  (is (= number (count (@call-times fn-name)))))
+(defmacro verify-call-times-for [fn-name number]
+  `(is (= ~number (count (get @call-times ~fn-name)))))
 
-(defn verify-first-call-args-for [fn-name & args]
-  (is (= true (pos? (count (@call-times fn-name)))))
-  (is (= args (first (@call-times fn-name)))))
+(defmacro verify-first-call-args-for [fn-name & args]
+  `(do
+    (is (= true (pos? (count (get @call-times ~fn-name)))))
+    (is (= ~(vec args) (first (get @call-times ~fn-name))))))
 
-(defn verify-called-once-with-args [fn-name & args]
-  (verify-call-times-for fn-name 1)
-  (apply verify-first-call-args-for fn-name args))
+(defmacro verify-called-once-with-args [fn-name & args]
+  `(do
+    (conjure.core/verify-call-times-for ~fn-name 1)
+    (conjure.core/verify-first-call-args-for ~fn-name ~@args)))
 
-(defn verify-nth-call-args-for [n fn-name & args]
-  (is (= args (nth (@call-times fn-name) (dec n)))))
+(defmacro verify-nth-call-args-for [n fn-name & args]
+  `(is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))))
 
-(defn verify-first-call-args-for-indices [fn-name indices & args]
-  (is (= true (pos? (count (@call-times fn-name)))))
-  (let [first-call-args (first (@call-times fn-name))
-        indices-in-range? (< (apply max indices) (count first-call-args))]
-    (if indices-in-range?
-      (is (= args
-             (map #(nth first-call-args %) indices)))
-      (is (= :fail (format "indices %s are out of range for the args, %s" indices args))))))
+(defmacro verify-first-call-args-for-indices [fn-name indices & args]
+  `(do
+     (is (= true (pos? (count (get @call-times ~fn-name)))))
+     (let [first-call-args# (first (get @call-times ~fn-name))
+           indices-in-range?# (< (apply max ~indices) (count first-call-args#))]
+       (if indices-in-range?#
+         (is (= ~(vec args)
+                (map #(nth first-call-args# %) ~indices)))
+         (is (= :fail (format "indices %s are out of range for the args, %s" ~indices ~(vec args))))))))
 
 (defn clear-calls []
   (reset! call-times {}))

@@ -1,5 +1,6 @@
 (ns conjure.core
-  (:use clojure.test))
+  (:use clojure.test
+        [clojure.string :only [join]]))
 
 (def call-times (atom {}))
 
@@ -15,9 +16,10 @@
 (defn stub-fn [function-name return-value]
   (swap! call-times assoc function-name [])
   (fn this [& args]
-    (swap! call-times update-in [function-name] conj args)
-    (swap! call-times update-in [this] conj args)
-    (apply-return-value-for-fn return-value args)))
+    (let [args (vec args)] ;; vectors look nicer when reporting
+      (swap! call-times update-in [function-name] conj args)
+      (swap! call-times update-in [this] conj args)
+      (apply-return-value-for-fn return-value args))))
 
 (defn stub-fn-with-return-vals [return-vals]
   (let [return-val-atom (atom return-vals)]
@@ -31,12 +33,15 @@
   (stub-fn function-name nil))
 
 (defmacro verify-call-times-for [fn-name number]
-  `(is (= ~number (count (get @call-times ~fn-name)))))
+  `(is (= ~number (count (get @call-times ~fn-name)))
+       (str "(verify-call-times-for " ~fn-name " " ~number ")")))
 
 (defmacro verify-first-call-args-for [fn-name & args]
   `(do
-    (is (= true (pos? (count (get @call-times ~fn-name)))))
-    (is (= ~(vec args) (first (get @call-times ~fn-name))))))
+     (is (= true (pos? (count (get @call-times ~fn-name))))
+         (str "(verify-first-call-args-for " ~fn-name " " ~(join " " args) ")"))
+     (is (= ~(vec args) (first (get @call-times ~fn-name)))
+         (str "(verify-first-call-args-for " ~fn-name " " ~(join " " args) ")"))))
 
 (defmacro verify-called-once-with-args [fn-name & args]
   `(do
@@ -44,17 +49,20 @@
     (conjure.core/verify-first-call-args-for ~fn-name ~@args)))
 
 (defmacro verify-nth-call-args-for [n fn-name & args]
-  `(is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))))
+  `(is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))
+       (str "(verify-nth-call-args-for " ~n " " ~fn-name " " ~(join " " args) ")")))
 
 (defmacro verify-first-call-args-for-indices [fn-name indices & args]
   `(do
-     (is (= true (pos? (count (get @call-times ~fn-name)))))
+     (is (= true (pos? (count (get @call-times ~fn-name))))
+         (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))
      (let [first-call-args# (first (get @call-times ~fn-name))
            indices-in-range?# (< (apply max ~indices) (count first-call-args#))]
        (if indices-in-range?#
-         (is (= ~(vec args)
-                (map #(nth first-call-args# %) ~indices)))
-         (is (= :fail (format "indices %s are out of range for the args, %s" ~indices ~(vec args))))))))
+         (is (= ~(vec args) (map #(nth first-call-args# %) ~indices))
+             (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))
+         (is (= :fail (format "indices %s are out of range for the args, %s" ~indices ~(vec args)))
+             (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))))))
 
 (defn clear-calls []
   (reset! call-times {}))

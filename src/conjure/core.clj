@@ -23,7 +23,7 @@
   (let [return-val-atom (atom return-vals)]
     (fn [& _]
       (let [current-result (first @return-val-atom)]
-        (if (> (count @return-val-atom) 1)
+        (when (> (count @return-val-atom) 1)
           (swap! return-val-atom rest))
         current-result))))
 
@@ -34,6 +34,7 @@
   (is (= number (count (@call-times fn-name)))))
 
 (defn verify-first-call-args-for [fn-name & args]
+  (is (= true (pos? (count (@call-times fn-name)))))
   (is (= args (first (@call-times fn-name)))))
 
 (defn verify-called-once-with-args [fn-name & args]
@@ -44,6 +45,7 @@
   (is (= args (nth (@call-times fn-name) (dec n)))))
 
 (defn verify-first-call-args-for-indices [fn-name indices & args]
+  (is (= true (pos? (count (@call-times fn-name)))))
   (let [first-call-args (first (@call-times fn-name))
         indices-in-range? (< (apply max indices) (count first-call-args))]
     (if indices-in-range?
@@ -56,8 +58,8 @@
 
 (defmacro mocking [fn-names & body]
   (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
-                              'binding
-                              'with-redefs)
+                                 'binding
+                                 'with-redefs)
         mocks (for [name fn-names]
                 `(conjure.core/mock-fn ~name))]
     `(~binding-or-with-redefs [~@(interleave fn-names mocks)]
@@ -65,11 +67,11 @@
 
 (defmacro stubbing [stub-forms & body]
   (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
-                              'binding
-                              'with-redefs)
+                                 'binding
+                                 'with-redefs)
         stub-pairs (partition 2 stub-forms)
         fn-names (map first stub-pairs)
         stubs (for [[fn-name return-value] stub-pairs]
-               `(conjure.core/stub-fn ~fn-name ~return-value))]
+                `(conjure.core/stub-fn ~fn-name ~return-value))]
     `(~binding-or-with-redefs [~@(interleave fn-names stubs)]
        ~@body)))

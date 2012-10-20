@@ -2,6 +2,13 @@
   (:use [clojure.test :only [run-tests deftest is are]]
         conjure.core))
 
+
+(deftest test-all-public-api-fns-have-docstrings
+  (is (= []
+         (->> (ns-publics 'conjure.core)
+              vals
+              (remove (comp :doc meta))))))
+
 (defn xx [a b]
   10)
 
@@ -18,34 +25,22 @@
 
 (deftest test-basic-mocking
   (mocking [xx yy]
-    (fn-under-test))
-  (verify-call-times-for xx 1)
-  (verify-call-times-for yy 1)
-  (verify-first-call-args-for xx 1 2)
-  (verify-first-call-args-for yy "blah")
+           (fn-under-test)
+           (verify-call-times-for xx 1)
+           (verify-call-times-for yy 1)
+           (verify-first-call-args-for xx 1 2)
+           (verify-first-call-args-for yy "blah")
 
-  ;; common case: combines fact that it had one call and its args were correct
-  (verify-called-once-with-args xx 1 2)
-  (verify-called-once-with-args yy "blah"))
+           ;; common case: combines fact that it had one call and its args were correct
+           (verify-called-once-with-args xx 1 2)
+           (verify-called-once-with-args yy "blah")))
 
 
 (deftest test-verifying-only-one-call-and-its-args
   (mocking [xx yy]
     (fn-under-test))
-  (verify-call-times-for xx 1)
-  (verify-call-times-for yy 1)
-  (verify-first-call-args-for xx 1 2)
-  (verify-first-call-args-for yy "blah"))
-
-(clear-calls)
-
-(deftest test-mocking-can-verify-within-mocking-scope
-  (mocking [xx yy]
-    (fn-under-test)
-    (verify-call-times-for xx 1)
-    (verify-call-times-for yy 1)
-    (verify-first-call-args-for xx 1 2)
-    (verify-first-call-args-for yy "blah")))
+  (verify-call-times-for xx 0)
+  (verify-call-times-for yy 0))
 
 (deftest test-basic-stubbing
   (is (= (another-fn-under-test) 30))
@@ -64,8 +59,8 @@
 
 (deftest test-verify-first-call-args-for-indices
   (mocking [three-arg-fn]
-           (three-arg-fn "one" "two" "three"))
-  (verify-first-call-args-for-indices three-arg-fn [0 2] "one" "three"))
+           (three-arg-fn "one" "two" "three")
+           (verify-first-call-args-for-indices three-arg-fn [0 2] "one" "three")))
 
 (defn f []
   "called f")
@@ -84,12 +79,14 @@
 (defn a [] "a")
 
 (deftest test-stub-fn-with-return-vals
-  (stubbing [a (stub-fn-with-return-vals ["b" "c" "d"])]
+  (stubbing [a (stub-fn-with-return-vals "b" "c" "d")]
             (is (= "b" (a)))
             (is (= "c" (a)))
             (is (= "d" (a)))
             (is (= "d" (a)))
             (is (= "d" (a))))
 
-  (stubbing [a (stub-fn-with-return-vals [])]
-            (is (= nil (a)))))
+  (is (thrown-with-msg?
+        RuntimeException
+        #"Looks like you may have forgotten to specify return values"
+        (stub-fn-with-return-vals))))

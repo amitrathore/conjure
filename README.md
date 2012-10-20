@@ -13,5 +13,7 @@ Usage
 The Blog
 ========
 
+(Note this blog references an older version of Conjure. In Conjure 2.0 all `verify-*` calls must be done from within a `mocking` or `stubbing` macro.)
+
 http://s-expressions.com/2010/01/24/conjure-simple-mocking-and-stubbing-for-clojure-unit-tests/
 

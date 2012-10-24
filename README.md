@@ -9,7 +9,7 @@ Usage
 ```clj
 [org.clojars.runa/conjure "2.0.0"]
 
-(:require [conjure.core])]
+(:require [conjure.core])
 ```
 
 The Set up

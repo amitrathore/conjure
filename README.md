@@ -52,7 +52,7 @@ Pretty straightforward, eh? You just use the `mocking` macro, specifying all the
 Stubbing
 ========
 
-As mentioned in the intro to this post, sometimes your tests need to specify values to be returned by the functions being mocked out. That’s where `stubbing` comes in. 
+Sometimes your tests need to specify values to be returned by the functions being mocked out. That’s where `stubbing` comes in. 
 
 Here’s how it works -
 

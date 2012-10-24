@@ -10,10 +10,58 @@ Usage
 [org.clojars.runa/conjure "2.0.0"]
 ```
 
-The Blog
+The Set up
+==========
+
+Imagine we had the following functions -
+
+```clj
+(defn xx [a b]
+  10)
+
+(defn yy [z]
+  20)
+
+(defn fn-under-test []
+  (xx 1 2)
+  (yy  "blah"))
+
+(defn another-fn-under-test []
+  (+ (xx nil nil) (yy nil)))
+```
+
+Also imagine that we had to test fn-under-test and another-fn-under-test, and we didn’t want to have to deal with the xx or yy functions. Maybe they’re horrible functions that open connections to computers running Windoze or something, I dunno.
+
+Mocking
+=======
+
+Here’s how we might mock them out -
+
+```clj
+(deftest test-basic-mocking
+  (mocking [xx yy]
+    (fn-under-test)
+    (verify-call-times-for xx 1)
+    (verify-call-times-for yy 1)
+    (verify-first-call-args-for xx 1 2)
+    (verify-first-call-args-for yy "blah")))
+```
+
+Pretty straightforward, eh? You just use the `mocking` macro, specifying all the functions that need to be mocked out. Then, within the scope of `mocking`, you call your functions that need to be tested. The calls to the specified functions will get mocked out (they won’t occur), and you can then use things like verify-call-times-for and verify-first-call-args-for to ensure things worked as expected.
+
+Stubbing
 ========
 
-(Note this blog references an older version of Conjure. In Conjure 2.0 all `verify-*` calls must be done from within a `mocking` or `stubbing` macro.)
+As mentioned in the intro to this post, sometimes your tests need to specify values to be returned by the functions being mocked out. That’s where `stubbing` comes in. 
 
-http://s-expressions.com/2010/01/24/conjure-simple-mocking-and-stubbing-for-clojure-unit-tests/
+Here’s how it works -
+
+```clj
+(deftest test-basic-stubbing
+  (is (= (another-fn-under-test) 30))
+  (stubbing [xx 1 yy 2]
+    (is (= (another-fn-under-test) 3))))
+```
+
+So that’s it! Pretty simple. Note how within the scope of `stubbing`, `xx` returns `1` and `yy` returns `2`. Now, for the implementation.
 

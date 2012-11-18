@@ -7,6 +7,11 @@
              were called with. This is used internally by Conjure."}
   call-times (atom {}))
 
+(def ^{:doc "Has a value of true when inside one of the Conjure faking macros.
+             Used to give users helpful error messages."
+       :dynamic true}
+  *in-fake-context* false)
+
 (defn- return-value-for-stub-fn [return-value args]
   (if (or (fn? return-value)
           (instance? clojure.lang.MultiFn return-value))
@@ -51,17 +56,27 @@
   [function-name]
   (stub-fn function-name nil))
 
+(defn assert-in-fake-context
+  "Used internally by COnjure to make sure `verify-x` macros ae only called from with Conjure's fakes"
+  [macro-name]
+  (when-not *in-fake-context*
+    (throw (AssertionError. (str "Conjure macro " macro-name " cannot be called outside "
+                                 "of one of `conjure.core/mocking`, `conjure.core/stubbing`, or `conjure.core/instrumenting`")))))
+
 (defmacro verify-call-times-for
   "Asserts that the faked function was called n times"
   [fn-name n]
-  `(is (= ~n (count (get @call-times ~fn-name)))
-       (str "(verify-call-times-for " ~fn-name " " ~n ")")))
+  `(do
+     (assert-in-fake-context "verify-call-times-for")
+     (is (= ~n (count (get @call-times ~fn-name)))
+         (str "(verify-call-times-for " ~fn-name " " ~n ")"))))
 
 (defmacro verify-first-call-args-for
   "Asserts that the faked function was called at least once, and the first call
    was passed the args specified"
   [fn-name & args]
   `(do
+     (assert-in-fake-context "verify-first-call-args-for")
      (is (= true (pos? (count (get @call-times ~fn-name))))
          (str "(verify-first-call-args-for " ~fn-name " " ~(join " " args) ")"))
      (is (= ~(vec args) (first (get @call-times ~fn-name)))
@@ -72,6 +87,7 @@
    args specified"
   [fn-name & args]
   `(do
+     (assert-in-fake-context "verify-called-once-with-args")
     (conjure.core/verify-call-times-for ~fn-name 1)
     (conjure.core/verify-first-call-args-for ~fn-name ~@args)))
 
@@ -79,8 +95,10 @@
   "Asserts that the function was called n times, and the nth time was passed the
    args specified"
   [n fn-name & args]
-  `(is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))
-       (str "(verify-nth-call-args-for " ~n " " ~fn-name " " ~(join " " args) ")")))
+  `(do
+     (assert-in-fake-context "verify-nth-call-args-for")
+     (is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))
+         (str "(verify-nth-call-args-for " ~n " " ~fn-name " " ~(join " " args) ")"))))
 
 (defmacro verify-first-call-args-for-indices
   "Asserts that the function was called at least once, and the first call was
@@ -88,6 +106,7 @@
    other words, it checks only the particular args you care about."
   [fn-name indices & args]
   `(do
+     (assert-in-fake-context "verify-first-call-args-for-indices")
      (is (= true (pos? (count (get @call-times ~fn-name))))
          (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))
      (let [first-call-args# (first (get @call-times ~fn-name))
@@ -104,8 +123,9 @@
 
 (defn- with-installed-fakes [fn-names fake-fns body]
   `(try
-     (~binding-or-with-redefs [~@(interleave fn-names fake-fns)]
-       ~@body)
+     (binding [*in-fake-context* true]
+       (~binding-or-with-redefs [~@(interleave fn-names fake-fns)]
+         ~@body))
      (finally
       (reset! call-times {}))))
 

@@ -87,7 +87,7 @@
         (stub-fn-with-return-vals))))
 
 (defn my-inc [n]
-  (inc n)) ;; inc has :inline metadata so cannot be stubbed
+  (inc n)) ;; inc has :inline metadata so cannot be faked
 
 (deftest test-instumenting
   (instrumenting [my-inc]

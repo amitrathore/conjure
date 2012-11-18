@@ -67,3 +67,18 @@ Here’s how it works -
 
 So that’s it! Pretty simple. Note how within the scope of `stubbing`, `xx` returns `1` and `yy` returns `2`. Now, for the implementation.
 
+Instrumenting
+=============
+
+Sometimes you just want to inspect the calls of some function without otherwise interfering with its execution. 
+
+```clj
+(defn my-inc [n]
+  (inc n)) ;; inc has :inline metadata so cannot be faked
+
+(deftest test-instumenting
+  (instrumenting [my-inc]
+                 (is (= 43 (my-inc 42)))
+                 (verify-called-once-with-args my-inc 42)))
+```
+

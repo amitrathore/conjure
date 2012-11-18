@@ -35,17 +35,12 @@
            (verify-called-once-with-args xx 1 2)
            (verify-called-once-with-args yy "blah")))
 
-
-(deftest test-verifying-only-one-call-and-its-args
-  (mocking [xx yy]
-    (fn-under-test))
-  (verify-call-times-for xx 0)
-  (verify-call-times-for yy 0))
-
 (deftest test-basic-stubbing
   (is (= (another-fn-under-test) 30))
   (stubbing [xx 1 yy 2]
-    (is (= (another-fn-under-test) 3))))
+            (is (= (another-fn-under-test) 3))
+            (verify-called-once-with-args xx nil nil)
+            (verify-called-once-with-args yy nil)))
 
 (deftest test-fn-based-stubs
   (is (= (another-fn-under-test) 30))
@@ -90,3 +85,12 @@
         RuntimeException
         #"Looks like you may have forgotten to specify return values"
         (stub-fn-with-return-vals))))
+
+(defn my-inc [n]
+  (inc n)) ;; inc has :inline metadata so cannot be stubbed
+
+(deftest test-instumenting
+  (instrumenting [my-inc]
+                 (is (= 43 (my-inc 42)))
+                 (verify-called-once-with-args my-inc 42)))
+

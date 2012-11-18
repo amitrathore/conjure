@@ -7,24 +7,28 @@
              were called with. This is used internally by Conjure."}
   call-times (atom {}))
 
-(defn- return-value-fn? [return-value]
-  (or (fn? return-value)
-      (instance? clojure.lang.MultiFn return-value)))
-
-(defn- apply-return-value-for-fn [return-value args]
-  (if (return-value-fn? return-value)
+(defn- return-value-for-stub-fn [return-value args]
+  (if (or (fn? return-value)
+          (instance? clojure.lang.MultiFn return-value))
     (apply return-value args)
     return-value))
 
 (defn stub-fn
   "Wraps a function, instrumenting it to record information about when it was
-  called. This is used internally by Conjure."
-  [function-name return-value]
-  (swap! call-times assoc function-name [])
+  called, and to return the return-value specified.  The actual function is never called.
+  This is used internally by Conjure."
+  [f return-value]
   (fn this [& args]
-    (let [args (vec args)] ;; vectors look nicer when reporting
-      (swap! call-times update-in [this] conj args)
-      (apply-return-value-for-fn return-value args))))
+    (swap! call-times update-in [this] conj (vec args))
+    (return-value-for-stub-fn return-value (vec args))))
+
+(defn instrumented-fn
+  "Wraps a function, instrumenting it to record information about when it was
+   called. The actual function is still called.  This is used internally by Conjure."
+  [f]
+  (fn this [& args]
+    (swap! call-times update-in [this] conj (vec args))
+    (apply f args)))
 
 (defn stub-fn-with-return-vals
   "Creates a anonymous function that, on each successive call, returns the next
@@ -43,7 +47,7 @@
 
 (defn mock-fn
   "Wraps a function, instrumenting it to record information about when it was
-  called. This is used internally by Conjure."
+  called, and stubbing it to return nil. This is used internally by Conjure."
   [function-name]
   (stub-fn function-name nil))
 
@@ -94,20 +98,35 @@
          (is (= :fail (format "indices %s are out of range for the args, %s" ~indices ~(vec args)))
              (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))))))
 
+(def ^{:private true :const true} binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
+                                                           'binding
+                                                           'with-redefs))
+
+(defn- with-installed-fakes [fn-names fake-fns body]
+  `(try
+     (~binding-or-with-redefs [~@(interleave fn-names fake-fns)]
+       ~@body)
+     (finally
+      (reset! call-times {}))))
+
 (defmacro mocking
   "Within the body of this macro you may use the various conjure verify-* macros
-   to make assertions about how the mocked functions have been called."
+   to make assertions about how the mocked functions have been called.  The original
+   function is not actually called, instead a a return value of nil is produced and
+   nothing is executed."
   [fn-names & body]
-  (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
-                                 'binding
-                                 'with-redefs)
-        mocks (for [name fn-names]
+  (let [mocks (for [name fn-names]
                 `(conjure.core/mock-fn ~name))]
-    `(try
-       (~binding-or-with-redefs [~@(interleave fn-names mocks)]
-         ~@body)
-       (finally
-        (reset! call-times {})))))
+    (with-installed-fakes fn-names mocks body)))
+
+(defmacro instrumenting
+  "Within the body of this macro you may use the various conjure verify-* macros
+   to make assertions about how the mocked functions have been called.  The original
+   function is still called."
+  [fn-names & body]
+  (let [instrumented-fns (for [name fn-names]
+                           `(conjure.core/instrumented-fn ~name))]
+    (with-installed-fakes fn-names instrumented-fns body)))
 
 (defmacro stubbing
   "Within the body of this macro you may use the various conjure verify-* macros
@@ -117,15 +136,7 @@
    used as the stub (it won't return the function - instead the function will be
    used in pace of the orginal."
   [stub-forms & body]
-  (let [binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
-                                 'binding
-                                 'with-redefs)
-        stub-pairs (partition 2 stub-forms)
-        fn-names (map first stub-pairs)
-        stubs (for [[fn-name return-value] stub-pairs]
+  (let [fn-names (take-nth 2 stub-forms)
+        stubs (for [[fn-name return-value] (partition 2 stub-forms)]
                 `(conjure.core/stub-fn ~fn-name ~return-value))]
-    `(try
-       (~binding-or-with-redefs [~@(interleave fn-names stubs)]
-         ~@body)
-       (finally
-        (reset! call-times {})))))
+    (with-installed-fakes fn-names stubs body)))

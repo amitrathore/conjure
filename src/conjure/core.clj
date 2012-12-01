@@ -57,7 +57,7 @@
   (stub-fn function-name nil))
 
 (defn assert-in-fake-context
-  "Used internally by COnjure to make sure `verify-x` macros ae only called from with Conjure's fakes"
+  "Used internally by Conjure to make sure `verify-x` macros ae only called from with Conjure's fakes"
   [macro-name]
   (when-not *in-fake-context*
     (throw (AssertionError. (str "Conjure macro " macro-name " cannot be called outside "

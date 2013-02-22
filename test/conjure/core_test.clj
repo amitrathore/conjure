@@ -120,3 +120,34 @@
         #"cannot be called outside"
         (verify-first-call-args-for-indices my-inc [0] 2))))
 
+(deftest test-verifies-only-called-on-conjurified-fns
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-call-times-for my-inc 2))))
+
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-first-call-args-for my-inc 2))))
+
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-called-once-with-args my-inc 2))))
+
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-nth-call-args-for 0 my-inc 2))))
+
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-first-call-args-for-indices my-inc [0] 2)))))
+

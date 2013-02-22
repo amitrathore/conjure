@@ -63,11 +63,21 @@
     (throw (AssertionError. (str "Conjure macro " macro-name " cannot be called outside "
                                  "of one of `conjure.core/mocking`, `conjure.core/stubbing`, or `conjure.core/instrumenting`")))))
 
+(defn assert-conjurified-fn
+  "Used internally by Conjure to make sure verify-x macros are only called on
+   functions that have been used in `mocking`, `stubbing`, or `instrumenting`"
+  [macro-name fn-name]
+  (when-not (contains? @call-times fn-name)
+    (throw (AssertionError. (str "Conjure macro " macro-name " was called on a function that was not "
+                                 "specified in one of `conjure.core/mocking`, `conjure.core/stubbing`, "
+                                 "or `conjure.core/instrumenting`")))))
+
 (defmacro verify-call-times-for
   "Asserts that the faked function was called n times"
   [fn-name n]
   `(do
      (assert-in-fake-context "verify-call-times-for")
+     (assert-conjurified-fn "verify-call-times-for" ~fn-name)
      (is (= ~n (count (get @call-times ~fn-name)))
          (str "(verify-call-times-for " ~fn-name " " ~n ")"))))
 
@@ -77,6 +87,7 @@
   [fn-name & args]
   `(do
      (assert-in-fake-context "verify-first-call-args-for")
+     (assert-conjurified-fn "verify-first-call-args-for" ~fn-name)
      (is (= true (pos? (count (get @call-times ~fn-name))))
          (str "(verify-first-call-args-for " ~fn-name " " ~(join " " args) ")"))
      (is (= ~(vec args) (first (get @call-times ~fn-name)))
@@ -88,8 +99,9 @@
   [fn-name & args]
   `(do
      (assert-in-fake-context "verify-called-once-with-args")
-    (conjure.core/verify-call-times-for ~fn-name 1)
-    (conjure.core/verify-first-call-args-for ~fn-name ~@args)))
+     (assert-conjurified-fn "verify-called-once-with-args" ~fn-name)
+     (conjure.core/verify-call-times-for ~fn-name 1)
+     (conjure.core/verify-first-call-args-for ~fn-name ~@args)))
 
 (defmacro verify-nth-call-args-for
   "Asserts that the function was called n times, and the nth time was passed the
@@ -97,6 +109,7 @@
   [n fn-name & args]
   `(do
      (assert-in-fake-context "verify-nth-call-args-for")
+     (assert-conjurified-fn "verify-nth-call-args-for" ~fn-name)
      (is (= ~(vec args) (nth (get @call-times ~fn-name) ~(dec n)))
          (str "(verify-nth-call-args-for " ~n " " ~fn-name " " ~(join " " args) ")"))))
 
@@ -107,6 +120,7 @@
   [fn-name indices & args]
   `(do
      (assert-in-fake-context "verify-first-call-args-for-indices")
+     (assert-conjurified-fn "verify-first-call-args-for-indices" ~fn-name)
      (is (= true (pos? (count (get @call-times ~fn-name))))
          (str "(verify-first-call-args-for-indices " ~fn-name " " ~indices " " ~(join " " args) ")"))
      (let [first-call-args# (first (get @call-times ~fn-name))

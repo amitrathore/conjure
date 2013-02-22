@@ -23,17 +23,21 @@
   called, and to return the return-value specified.  The actual function is never called.
   This is used internally by Conjure."
   [f return-value]
-  (fn this [& args]
-    (swap! call-times update-in [this] conj (vec args))
-    (return-value-for-stub-fn return-value (vec args))))
+  (let [stubbed-f (fn this [& args]
+                    (swap! call-times update-in [this] conj (vec args))
+                    (return-value-for-stub-fn return-value (vec args)))]
+    (swap! call-times assoc stubbed-f [])
+    stubbed-f))
 
 (defn instrumented-fn
   "Wraps a function, instrumenting it to record information about when it was
    called. The actual function is still called.  This is used internally by Conjure."
   [f]
-  (fn this [& args]
-    (swap! call-times update-in [this] conj (vec args))
-    (apply f args)))
+  (let [instrumented-f (fn this [& args]
+                         (swap! call-times update-in [this] conj (vec args))
+                         (apply f args))]
+    (swap! call-times assoc instrumented-f [])
+    instrumented-f))
 
 (defn stub-fn-with-return-vals
   "Creates a anonymous function that, on each successive call, returns the next

@@ -25,6 +25,8 @@
 
 (deftest test-basic-mocking
   (mocking [xx yy]
+           (verify-call-times-for xx 0)
+           (verify-call-times-for yy 0)
            (fn-under-test)
            (verify-call-times-for xx 1)
            (verify-call-times-for yy 1)

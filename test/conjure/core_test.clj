@@ -47,9 +47,9 @@
 (deftest test-fn-based-stubs
   (is (= (another-fn-under-test) 30))
   (stubbing [xx 1 yy (fn [_] (+ 2 3))]
-    (is (= (another-fn-under-test) 6)))
+            (is (= (another-fn-under-test) 6)))
   (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b )))]
-    (is (= (another-fn-under-test) 4))))
+            (is (= (another-fn-under-test) 4))))
 
 (defn three-arg-fn [a b c]
   "Bonjour!")
@@ -64,7 +64,7 @@
 
 (deftest test-passes-args-through-to-fake-fn
   (stubbing [f (fn [& msgs] msgs)]
-    (is (= ["a" "b" "c"] (f "a" "b" "c")))))
+            (is (= ["a" "b" "c"] (f "a" "b" "c")))))
 
 (deftest test-can-stub-multimethods
   (defmulti mm :shape)
@@ -152,4 +152,22 @@
                  AssertionError
                  #"was called on a function that was not specified"
                  (verify-first-call-args-for-indices my-inc [0] 2)))))
+
+
+(deftest test-dissallows-nesting
+  (mocking [inc]
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"cannot be called from within"
+                 (stubbing [str "a"]))))
+  (stubbing [inc 3]
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"cannot be called from within"
+                 (instrumenting [str]))))
+  (instrumenting [inc]
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"cannot be called from within"
+                 (mocking [str])))))
 

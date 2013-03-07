@@ -60,6 +60,14 @@
   [function-name]
   (stub-fn function-name nil))
 
+(defn assert-not-in-fake-context
+  "Used internally by Conjure to make sure mocking/stubbing/instrumenting are
+   not being nested, because they do not work as you might expect when nested."
+  [macro-name]
+  (when *in-fake-context*
+    (throw (AssertionError. (str "Conjure macro " macro-name " cannot be called from within"
+                                 " another of `conjure.core/mocking`, `conjure.core/stubbing`, or `conjure.core/instrumenting`")))))
+
 (defn assert-in-fake-context
   "Used internally by Conjure to make sure `verify-x` macros ae only called from with Conjure's fakes"
   [macro-name]
@@ -139,8 +147,9 @@
                                                            'binding
                                                            'with-redefs))
 
-(defn- with-installed-fakes [fn-names fake-fns body]
+(defn- with-installed-fakes [macro-name fn-names fake-fns body]
   `(try
+     (assert-not-in-fake-context ~macro-name)
      (binding [*in-fake-context* true]
        (~binding-or-with-redefs [~@(interleave fn-names fake-fns)]
          ~@body))
@@ -155,7 +164,7 @@
   [fn-names & body]
   (let [mocks (for [name fn-names]
                 `(conjure.core/mock-fn ~name))]
-    (with-installed-fakes fn-names mocks body)))
+    (with-installed-fakes "mocking" fn-names mocks body)))
 
 (defmacro instrumenting
   "Within the body of this macro you may use the various conjure verify-* macros
@@ -164,7 +173,7 @@
   [fn-names & body]
   (let [instrumented-fns (for [name fn-names]
                            `(conjure.core/instrumented-fn ~name))]
-    (with-installed-fakes fn-names instrumented-fns body)))
+    (with-installed-fakes "instrumenting" fn-names instrumented-fns body)))
 
 (defmacro stubbing
   "Within the body of this macro you may use the various conjure verify-* macros
@@ -177,4 +186,4 @@
   (let [fn-names (take-nth 2 stub-forms)
         stubs (for [[fn-name return-value] (partition 2 stub-forms)]
                 `(conjure.core/stub-fn ~fn-name ~return-value))]
-    (with-installed-fakes fn-names stubs body)))
+    (with-installed-fakes "stubbing" fn-names stubs body)))

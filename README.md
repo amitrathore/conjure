@@ -82,3 +82,6 @@ Sometimes you just want to inspect the calls of some function without otherwise 
                  (verify-called-once-with-args my-inc 42)))
 ```
 
+License
+=======
+Conjure uses the MIT License (MIT) - http://opensource.org/licenses/MIT

@@ -59,6 +59,13 @@
            (three-arg-fn "one" "two" "three")
            (verify-first-call-args-for-indices three-arg-fn [0 2] "one" "three")))
 
+(deftest test-verify-nth-call-args-for-indices
+  (mocking [three-arg-fn]
+           (three-arg-fn "one" "two" "three")
+           (three-arg-fn "four" "five" "six")
+           (verify-nth-call-args-for-indices 0 three-arg-fn [0 2] "one" "three")
+           (verify-nth-call-args-for-indices 1 three-arg-fn [1 2] "five" "six")))
+
 (defn f []
   "called f")
 

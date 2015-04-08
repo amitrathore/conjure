@@ -178,3 +178,7 @@
                  #"cannot be called from within"
                  (mocking [str])))))
 
+(deftest test-allows-verification-of-stubbed-functions
+  (stubbing [inc 3]
+            (inc 3)
+            (verify-nth-call-args-for 1 inc 3)))

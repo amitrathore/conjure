@@ -3,8 +3,8 @@
 
 (defmacro with-nil?-always-foo [& body]
   `(stubbing [nil? :foo]
-    ~@body))
+             ~@body))
 
 (defmacro with-mocked-nil? [& body]
   `(mocking [nil?]
-     ~@body))
+            ~@body))

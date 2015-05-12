@@ -48,7 +48,7 @@
   (is (= (another-fn-under-test) 30))
   (stubbing [xx 1 yy (fn [_] (+ 2 3))]
             (is (= (another-fn-under-test) 6)))
-  (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b )))]
+  (stubbing [xx 1 yy (fn [_] (+ 2 (xx :a :b)))]
             (is (= (another-fn-under-test) 4))))
 
 (defn three-arg-fn [a b c]
@@ -91,9 +91,9 @@
             (is (= "d" (a))))
 
   (is (thrown-with-msg?
-        RuntimeException
-        #"Looks like you may have forgotten to specify return values"
-        (stub-fn-with-return-vals))))
+       RuntimeException
+       #"Looks like you may have forgotten to specify return values"
+       (stub-fn-with-return-vals))))
 
 (defn my-inc [n]
   (inc n)) ;; inc has :inline metadata so cannot be faked
@@ -105,76 +105,76 @@
 
 (deftest test-verifies-only-called-from-within-fake-contexts
   (is (thrown-with-msg?
-        AssertionError
-        #"cannot be called outside"
-        (verify-call-times-for my-inc 2)))
+       AssertionError
+       #"cannot be called outside"
+       (verify-call-times-for my-inc 2)))
 
   (is (thrown-with-msg?
-        AssertionError
-        #"cannot be called outside"
-        (verify-first-call-args-for my-inc 2)))
+       AssertionError
+       #"cannot be called outside"
+       (verify-first-call-args-for my-inc 2)))
 
   (is (thrown-with-msg?
-        AssertionError
-        #"cannot be called outside"
-        (verify-called-once-with-args my-inc 2)))
+       AssertionError
+       #"cannot be called outside"
+       (verify-called-once-with-args my-inc 2)))
 
   (is (thrown-with-msg?
-        AssertionError
-        #"cannot be called outside"
-        (verify-nth-call-args-for 0 my-inc 2)))
+       AssertionError
+       #"cannot be called outside"
+       (verify-nth-call-args-for 0 my-inc 2)))
   
   (is (thrown-with-msg?
-        AssertionError
-        #"cannot be called outside"
-        (verify-first-call-args-for-indices my-inc [0] 2))))
+       AssertionError
+       #"cannot be called outside"
+       (verify-first-call-args-for-indices my-inc [0] 2))))
 
 (deftest test-verifies-only-called-on-conjurified-fns
   (mocking []
            (is (thrown-with-msg?
-                 AssertionError
-                 #"was called on a function that was not specified"
-                 (verify-call-times-for my-inc 2))))
+                AssertionError
+                #"was called on a function that was not specified"
+                (verify-call-times-for my-inc 2))))
 
   (mocking []
            (is (thrown-with-msg?
-                 AssertionError
-                 #"was called on a function that was not specified"
-                 (verify-first-call-args-for my-inc 2))))
+                AssertionError
+                #"was called on a function that was not specified"
+                (verify-first-call-args-for my-inc 2))))
 
   (mocking []
            (is (thrown-with-msg?
-                 AssertionError
-                 #"was called on a function that was not specified"
-                 (verify-called-once-with-args my-inc 2))))
+                AssertionError
+                #"was called on a function that was not specified"
+                (verify-called-once-with-args my-inc 2))))
 
   (mocking []
            (is (thrown-with-msg?
-                 AssertionError
-                 #"was called on a function that was not specified"
-                 (verify-nth-call-args-for 0 my-inc 2))))
+                AssertionError
+                #"was called on a function that was not specified"
+                (verify-nth-call-args-for 0 my-inc 2))))
 
   (mocking []
            (is (thrown-with-msg?
-                 AssertionError
-                 #"was called on a function that was not specified"
-                 (verify-first-call-args-for-indices my-inc [0] 2)))))
+                AssertionError
+                #"was called on a function that was not specified"
+                (verify-first-call-args-for-indices my-inc [0] 2)))))
 
 
 (deftest test-dissallows-nesting
   (mocking [inc]
            (is (thrown-with-msg?
-                 AssertionError
-                 #"cannot be called from within"
-                 (stubbing [str "a"]))))
+                AssertionError
+                #"cannot be called from within"
+                (stubbing [str "a"]))))
   (stubbing [inc 3]
-           (is (thrown-with-msg?
+            (is (thrown-with-msg?
                  AssertionError
                  #"cannot be called from within"
                  (instrumenting [str]))))
   (instrumenting [inc]
-           (is (thrown-with-msg?
-                 AssertionError
-                 #"cannot be called from within"
-                 (mocking [str])))))
+                 (is (thrown-with-msg?
+                      AssertionError
+                      #"cannot be called from within"
+                      (mocking [str])))))
 

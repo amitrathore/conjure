@@ -1,5 +1,5 @@
 (ns ^{:doc "Simple mocking and stubbing for Clojure unit-tests. Supports Clojure 1.2 through 1.5."}
-  conjure.core
+ conjure.core
   (:use clojure.test
         [clojure.string :only [join]]))
 
@@ -150,7 +150,7 @@
    passed the args specified, into the indices of the arglist specified. In
    other words, it checks only the particular args you care about."
   [fn-name indices & args]
-   `(conjure.core/verify-nth-call-args-for-indices 0 ~fn-name ~indices ~@args))
+  `(conjure.core/verify-nth-call-args-for-indices 0 ~fn-name ~indices ~@args))
 
 (def ^{:private true :const true} binding-or-with-redefs (if (= 2 (:minor *clojure-version*))
                                                            'binding
@@ -161,9 +161,9 @@
      (assert-not-in-fake-context ~macro-name)
      (binding [*in-fake-context* true]
        (~binding-or-with-redefs [~@(interleave fn-names fake-fns)]
-         ~@body))
+                                ~@body))
      (finally
-      (reset! call-times {}))))
+       (reset! call-times {}))))
 
 (defmacro mocking
   "Within the body of this macro you may use the various conjure verify-* macros

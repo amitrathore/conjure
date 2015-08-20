@@ -66,6 +66,18 @@
            (verify-nth-call-args-for-indices 0 three-arg-fn [0 2] "one" "three")
            (verify-nth-call-args-for-indices 1 three-arg-fn [1 2] "five" "six")))
 
+(deftest test-verify-nth-call-arguments
+  (mocking [yy]
+           (yy {:port :env})
+           (yy {:port 80})
+           (let [body-invoked (atom false)]
+             (verify-nth-call-arguments 0 yy (swap! body-invoked (constantly true)))
+             (is @body-invoked))
+           (verify-nth-call-arguments 0 yy (is (= (get-in conjure.core/*args* [0 :port])
+                                                  :env)))
+           (verify-nth-call-arguments 1 yy (is (= (get-in conjure.core/*args* [0 :port])
+                                                  80)))))
+
 (defn f []
   "called f")
 
@@ -123,11 +135,16 @@
         AssertionError
         #"cannot be called outside"
         (verify-nth-call-args-for 0 my-inc 2)))
-  
+
   (is (thrown-with-msg?
         AssertionError
         #"cannot be called outside"
-        (verify-first-call-args-for-indices my-inc [0] 2))))
+        (verify-first-call-args-for-indices my-inc [0] 2)))
+
+  (is (thrown-with-msg?
+        AssertionError
+        #"cannot be called outside"
+        (verify-nth-call-arguments 0 my-inc))))
 
 (deftest test-verifies-only-called-on-conjurified-fns
   (mocking []
@@ -158,8 +175,20 @@
            (is (thrown-with-msg?
                  AssertionError
                  #"was called on a function that was not specified"
-                 (verify-first-call-args-for-indices my-inc [0] 2)))))
+                 (verify-first-call-args-for-indices my-inc [0] 2))))
 
+  (mocking []
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"was called on a function that was not specified"
+                 (verify-nth-call-arguments 0 my-inc)))))
+
+(deftest test-verifies-number-of-function-calls
+  (mocking [my-inc]
+           (is (thrown-with-msg?
+                 AssertionError
+                 #"is called less than 1 time/s"
+                 (verify-nth-call-arguments 0 my-inc)))))
 
 (deftest test-dissallows-nesting
   (mocking [inc]

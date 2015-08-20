@@ -12,6 +12,10 @@
        :dynamic true}
   *in-fake-context* false)
 
+(def ^{:dynamic true
+       :doc "Has the value of the arguments that have been provided to a function call."}
+  *args* nil)
+
 (defn- return-value-for-stub-fn [return-value args]
   (if (or (fn? return-value)
           (instance? clojure.lang.MultiFn return-value))
@@ -196,3 +200,34 @@
         stubs (for [[fn-name return-value] (partition 2 stub-forms)]
                 `(conjure.core/stub-fn ~fn-name ~return-value))]
     (with-installed-fakes "stubbing" fn-names stubs body)))
+
+(defn- assert-call-times-for
+  "Check that a function with a given name was invoked at least the specified number of
+  times in the stubbing/mock context."
+  [n fn-name macro-name]
+  (if (>= n (-> @call-times (get fn-name) count))
+    (throw (AssertionError.
+             (format "In macro '%s' the function '%s' is called less than %d time/s."
+                     macro-name
+                     fn-name
+                     (inc n))))))
+
+(defmacro verify-nth-call-arguments
+  "Execute a number of verifications agains the arguments provided to the nth call of a
+  function. The function should be called at least n times. The verifications should use
+  the dynamic variable 'conjure.core/*args*' for testing the arguments.
+
+   Example:
+    (mocking [my-func]
+             (my-func {:port 80 :host \"localhost\"})
+             (verify-nth-call-arguments 0 my-func (is (= (get-in conjure.core/*args*
+                                                                 [0 :port])
+                                                         80))))"
+  [n fn-name & body]
+  (let [macro-name (name 'verify-nth-call-arguments)]
+    `(do
+       (assert-in-fake-context ~macro-name)
+       (conjure.core/assert-conjurified-fn ~macro-name ~fn-name)
+       (#'conjure.core/assert-call-times-for ~n ~fn-name ~macro-name)
+       (binding [*args* (nth (get @call-times ~fn-name) ~n)]
+         ~@body))))
